@@ -23,7 +23,7 @@
 #if !defined(__AVR_ATtiny85__) // Not for ATtiny, at all
 
 #include "Adafruit_GFX.h"
-#include <SPI.h>
+//#include <SPI.h>
 
 // HARDWARE CONFIG ---------------------------------------------------------
 
