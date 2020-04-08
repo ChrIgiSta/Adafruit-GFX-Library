@@ -25,7 +25,15 @@
 #include "Adafruit_GFX.h"
 //#include <SPI.h>
 
+#include "esp32_interface.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // HARDWARE CONFIG ---------------------------------------------------------
+
+//#define ESP8266 1
 
 #if defined(__AVR__)
 typedef uint8_t ADAGFX_PORT_t;       ///< PORT values are 8-bit
@@ -516,6 +524,10 @@ protected:
 
   uint32_t _freq = 0; ///< Dummy var to keep subclasses happy
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // end __AVR_ATtiny85__
 #endif // end _ADAFRUIT_SPITFT_H_

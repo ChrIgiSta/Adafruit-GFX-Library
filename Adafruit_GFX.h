@@ -20,7 +20,8 @@
 /// A generic graphics superclass that can handle all sorts of drawing. At a
 /// minimum you can subclass and provide drawPixel(). At a maximum you can do a
 /// ton of overriding to optimize. Used for any/all Adafruit displays!
-class Adafruit_GFX : public Print {
+//class Adafruit_GFX : public Print {
+class Adafruit_GFX { 
 
 public:
   Adafruit_GFX(int16_t w, int16_t h); // Constructor
@@ -112,10 +113,10 @@ public:
                uint16_t bg, uint8_t size_x, uint8_t size_y),
       getTextBounds(const char *string, int16_t x, int16_t y, int16_t *x1,
                     int16_t *y1, uint16_t *w, uint16_t *h),
-      getTextBounds(const __FlashStringHelper *s, int16_t x, int16_t y,
-                    int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
-      getTextBounds(const String &str, int16_t x, int16_t y, int16_t *x1,
-                    int16_t *y1, uint16_t *w, uint16_t *h),
+      // getTextBounds(const __FlashStringHelper *s, int16_t x, int16_t y,
+      //               int16_t *x1, int16_t *y1, uint16_t *w, uint16_t *h),
+      // getTextBounds(const String &str, int16_t x, int16_t y, int16_t *x1,
+      //               int16_t *y1, uint16_t *w, uint16_t *h),
       setTextSize(uint8_t s), setTextSize(uint8_t sx, uint8_t sy),
       setFont(const GFXfont *f = NULL);
 
@@ -178,12 +179,16 @@ public:
   /**********************************************************************/
   void cp437(boolean x = true) { _cp437 = x; }
 
-  using Print::write;
-#if ARDUINO >= 100
-  virtual size_t write(uint8_t);
-#else
-  virtual void write(uint8_t);
-#endif
+//   using Print::write;
+// #if ARDUINO >= 100
+//   virtual size_t write(uint8_t);
+// #else
+//   virtual void write(uint8_t);
+// #endif
+size_t write(uint8_t);
+
+size_t print(char c);
+size_t print(const char str[]);
 
   /************************************************************************/
   /*!
