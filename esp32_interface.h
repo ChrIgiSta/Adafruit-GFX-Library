@@ -24,8 +24,11 @@
 #define MSBLAST  0
 
 //#define ICACHE_RODATA_ATTR  _SECTION_ATTR_IMPL(".irom1", __COUNTER__)
-#define PROGMEM   DRAM_ATTR
+#define PROGMEM   ROMFN_ATTR
 #define pgm_read_byte(addr)   (*(const unsigned char *)(addr))
+
+
+//#define ESP8266 1
 
 
 void digitalWrite(uint16_t aPinNumber, bool aState);
@@ -35,6 +38,8 @@ bool digitalRead(uint16_t aPinNumber);
 void pinMode(uint16_t aPinNumber, uint8_t aPinMode);
 
 void delay(uint32_t aMs);
+
+void yield(void);
 
 
 class SPIClass
@@ -46,11 +51,15 @@ public:
     uint8_t transfer(uint8_t aByte);
     void setBitOrder(uint8_t aByteOrder);
     void setDataMode(uint8_t aSpiMode);
+    void setFrequency(uint32_t aFrequency);
+    void write(uint8_t aByte);
+    void write16(uint16_t aWord);
+    void write32(uint32_t aDoubleWord);
 
 protected:
 
 private:
-
+    uint32_t __spiTranslate32(uint32_t data);
 };
 
 #if !defined(NO_GLOBAL_INSTANCES) && !defined(NO_GLOBAL_SPI)

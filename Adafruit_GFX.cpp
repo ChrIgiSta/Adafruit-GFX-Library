@@ -1009,6 +1009,37 @@ void Adafruit_GFX::drawRGBBitmap(int16_t x, int16_t y, const uint16_t bitmap[],
   endWrite();
 }
 
+void Adafruit_GFX::drawDownScaledRGBBitmap(int16_t x, int16_t y, const uint16_t bitmap[],
+                                 int16_t w, int16_t h, uint8_t scale) {
+  startWrite();
+  // y
+  for (int16_t j = 0; j < h/scale; j++, y++) {
+    // x
+    for (int16_t i = 0; i < w/scale; i++) {
+      writePixel(x + i, y, pgm_read_word(&bitmap[j*scale * w + i*scale]));
+    }
+  }
+
+  endWrite();
+}
+
+void Adafruit_GFX::drawInvertedBgDownScaledRGBBitmap(int16_t x, int16_t y, const uint16_t bitmap[],
+                                 int16_t w, int16_t h, uint8_t scale, bool transparent, uint16_t color) {
+  startWrite();
+  // y
+  for (int16_t j = 0; j < h/scale; j++, y++) {
+    // x
+    for (int16_t i = 0; i < w/scale; i++) {
+      uint16_t pixelColor = pgm_read_word(&bitmap[j*scale * w + i*scale]);
+      if(pixelColor == 0xffff) pixelColor = 0x0000;
+      else if(pixelColor <= 0x28E3) pixelColor = color;
+      if(!(transparent && pixelColor == 0x0000))writePixel(x + i, y, pixelColor);
+    }
+  }
+
+  endWrite();
+}
+
 /**************************************************************************/
 /*!
    @brief   Draw a RAM-resident 16-bit image (RGB 5/6/5) at the specified (x,y)

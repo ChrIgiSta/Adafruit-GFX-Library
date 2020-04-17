@@ -46,6 +46,8 @@
 **
 */
 
+#include "Adafruit_ST7735.h"
+
 #define TOMTHUMB_USE_EXTENDED 0
 
 const uint8_t TomThumbBitmaps[] PROGMEM = {
