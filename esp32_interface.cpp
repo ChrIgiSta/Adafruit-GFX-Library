@@ -17,10 +17,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "rom/ets_sys.h"
+#include "esp32/rom/ets_sys.h"
 #include "esp_attr.h"
-#include "esp_intr.h"
-#include "rom/gpio.h"
+#include "esp_intr_alloc.h"
+#include "esp32/rom/gpio.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/io_mux_reg.h"
@@ -28,7 +28,7 @@
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 
-
+#define CONFIG_DISABLE_HAL_LOCKS 1
 
 
 struct spi_struct_t {
@@ -52,8 +52,8 @@ static spi_t _spi_bus_array[4] = {
     {(volatile spi_dev_t *)(DR_REG_SPI3_BASE), 3}
 };
 #else
-#define SPI_MUTEX_LOCK()    do {} while (xSemaphoreTake(spi->lock, portMAX_DELAY) != pdPASS)
-#define SPI_MUTEX_UNLOCK()  xSemaphoreGive(spi->lock)
+#define SPI_MUTEX_LOCK()    //do {} while (xSemaphoreTake(spi->lock, portMAX_DELAY) != pdPASS)
+#define SPI_MUTEX_UNLOCK()  //xSemaphoreGive(spi->lock)
 
 static spi_t _spi_bus_array[4] = {
     {(volatile spi_dev_t *)(DR_REG_SPI0_BASE), NULL, 0},
@@ -64,10 +64,23 @@ static spi_t _spi_bus_array[4] = {
 #endif
 
 
+#include "soc/gpio_sig_map.h"
+
+void IRAM_ATTR pinMatrixOutAttach(uint8_t pin, uint8_t function, bool invertOut, bool invertEnable)
+{
+    gpio_matrix_out(pin, function, invertOut, invertEnable);
+}
+// void pinMatrixOutDetach(uint8_t pin, bool invertOut, bool invertEnable);
+
+void IRAM_ATTR pinMatrixInAttach(uint8_t pin, uint8_t signal, bool inverted)
+{
+    gpio_matrix_in(pin, signal, inverted);
+}
+// void pinMatrixInDetach(uint8_t signal, bool high, bool inverted);
+
 
 static const char *IF_TAG = "DispIf";
 
-static spi_t spi3;
 static spi_t *spi;
 
 
@@ -100,11 +113,62 @@ void yield(void)
     return;
 }
 
+// #define SPI_CLK_IDX(p)  ((p==0)?SPICLK_OUT_IDX:((p==1)?SPICLK_OUT_IDX:((p==2)?HSPICLK_OUT_IDX:((p==3)?VSPICLK_OUT_IDX:0))))
+// #define SPI_MISO_IDX(p) ((p==0)?SPIQ_OUT_IDX:((p==1)?SPIQ_OUT_IDX:((p==2)?HSPIQ_OUT_IDX:((p==3)?VSPIQ_OUT_IDX:0))))
+// #define SPI_MOSI_IDX(p) ((p==0)?SPID_IN_IDX:((p==1)?SPID_IN_IDX:((p==2)?HSPID_IN_IDX:((p==3)?VSPID_IN_IDX:0))))
+
+// #define SPI_SPI_SS_IDX(n)   ((n==0)?SPICS0_OUT_IDX:((n==1)?SPICS1_OUT_IDX:((n==2)?SPICS2_OUT_IDX:SPICS0_OUT_IDX)))
+// #define SPI_HSPI_SS_IDX(n)   ((n==0)?HSPICS0_OUT_IDX:((n==1)?HSPICS1_OUT_IDX:((n==2)?HSPICS2_OUT_IDX:HSPICS0_OUT_IDX)))
+// #define SPI_VSPI_SS_IDX(n)   ((n==0)?VSPICS0_OUT_IDX:((n==1)?VSPICS1_OUT_IDX:((n==2)?VSPICS2_OUT_IDX:VSPICS0_OUT_IDX)))
+// #define SPI_SS_IDX(p, n)   ((p==0)?SPI_SPI_SS_IDX(n):((p==1)?SPI_SPI_SS_IDX(n):((p==2)?SPI_HSPI_SS_IDX(n):((p==3)?SPI_VSPI_SS_IDX(n):0))))
+
+// #define SPI_CS_MASK_ALL 0x7
 
 SPIClass::SPIClass(void)
 {
-    spi3.dev = &SPI3;
-    spi = &spi3;
+    spi = &_spi_bus_array[0];
+
+    // // Bus Init
+    // spi->dev->slave.trans_done = 0;
+    // spi->dev->slave.slave_mode = 0;
+    // spi->dev->pin.val = 0;
+    // spi->dev->user.val = 0;
+    // spi->dev->user1.val = 0;
+    // spi->dev->ctrl.val = 0;
+    // spi->dev->ctrl1.val = 0;
+    // spi->dev->ctrl2.val = 0;
+    // spi->dev->clock.val = 0;
+
+    // spi->num = 0;
+
+    // DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI3_CLK_EN);
+    // DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI3_RST);
+
+    // int8_t sck = 18;
+    // pinMode(sck, OUTPUT);
+    // pinMatrixOutAttach(sck, SPI_CLK_IDX(spi->num), false, false);
+
+    // int8_t miso = 19;
+    // pinMode(sck, INPUT);
+    // pinMatrixInAttach(miso, SPI_MISO_IDX(spi->num), false);
+
+    // int8_t mosi = 23;
+    // pinMode(mosi, OUTPUT);
+    // pinMatrixOutAttach(mosi, SPI_MOSI_IDX(spi->num), false, false);
+
+    // int8_t ss = 5;
+    // pinMode(ss, OUTPUT);
+    // pinMatrixOutAttach(ss, SPI_SS_IDX(spi->num, 0), false, false);
+    // spi->dev->pin.val &= ~((1 << 0) & SPI_CS_MASK_ALL);
+
+    // spi->dev->clock.val = 0x013c1001;
+    // // Mode
+    // spi->dev->pin.ck_idle_edge = 0;
+    // spi->dev->user.ck_out_edge = 0;
+
+    // // MSB first
+    // spi->dev->ctrl.wr_bit_order = 0;
+    // spi->dev->ctrl.rd_bit_order = 0;
 }
 
 uint32_t SPIClass::__spiTranslate32(uint32_t data)
@@ -142,50 +206,59 @@ uint8_t SPIClass::transfer(uint8_t aByte)
     uint8_t rx = 0;
 
     spiTransfer(SPI_DEVICE_LCD, &aByte, 1, NULL, true, &rx);
+    // spi->dev->mosi_dlen.usr_mosi_dbitlen = 7;
+    // spi->dev->miso_dlen.usr_miso_dbitlen = 7;
+    // spi->dev->data_buf[0] = aByte;
+    // spi->dev->cmd.usr = 1;
+    // while(spi->dev->cmd.usr);
     
+    // return spi->dev->data_buf[0];
     return rx;
 }
 
 void SPIClass::write(uint8_t aByte)
 {
-    //SPI_MUTEX_LOCK();
-    // SPI3.mosi_dlen.usr_mosi_dbitlen = 7;
-    // SPI3.miso_dlen.usr_miso_dbitlen = 0;
-    // SPI3.data_buf[0] = aByte;
-    // SPI3.cmd.usr = 1;
+    // //SPI_MUTEX_LOCK();
+    // spi->dev->mosi_dlen.usr_mosi_dbitlen = 7;
+    // spi->dev->miso_dlen.usr_miso_dbitlen = 0;
+    // spi->dev->data_buf[0] = aByte;
+    // spi->dev->cmd.usr = 1;
     // while(spi->dev->cmd.usr);
-    //SPI_MUTEX_UNLOCK();
+    // // //SPI_MUTEX_UNLOCK();
+
     spiTransfer(SPI_DEVICE_LCD, &aByte, 1, NULL, true, NULL);
 }
 
 void SPIClass::write16(uint16_t aWord)
 {
-    if(!SPI3.ctrl.wr_bit_order)
+    if(!spi->dev->ctrl.wr_bit_order)
     {
         aWord = (aWord >> 8) | (aWord << 8);
     }
     //SPI_MUTEX_LOCK();
-    // SPI3.mosi_dlen.usr_mosi_dbitlen = 15;
-    // SPI3.miso_dlen.usr_miso_dbitlen = 0;
-    // SPI3.data_buf[0] = aWord;
-    // SPI3.cmd.usr = 1;
-    // while(SPI3.cmd.usr);
+    spi->dev->mosi_dlen.usr_mosi_dbitlen = 15;
+    spi->dev->miso_dlen.usr_miso_dbitlen = 0;
+    spi->dev->data_buf[0] = aWord;
+    spi->dev->cmd.usr = 1;
+    while(spi->dev->cmd.usr);
     //SPI_MUTEX_UNLOCK();
-    spiTransfer(SPI_DEVICE_LCD, (uint8_t*)&aWord, 2, NULL, true, NULL);
+    
+    //spiTransfer(SPI_DEVICE_LCD, (uint8_t*)&aWord, 2, NULL, true, NULL);
 }
 
 void SPIClass::write32(uint32_t aDoubleWord)
 {
-    if(!SPI3.ctrl.wr_bit_order)
+    if(!spi->dev->ctrl.wr_bit_order)
     {
         aDoubleWord = __spiTranslate32(aDoubleWord);
     }
     //SPI_MUTEX_LOCK();
-    // SPI3.mosi_dlen.usr_mosi_dbitlen = 31;
-    // SPI3.miso_dlen.usr_miso_dbitlen = 0;
-    // SPI3.data_buf[0] = aDoubleWord;
-    // SPI3.cmd.usr = 1;
-    // while(SPI3.cmd.usr);
+    spi->dev->mosi_dlen.usr_mosi_dbitlen = 31;
+    spi->dev->miso_dlen.usr_miso_dbitlen = 0;
+    spi->dev->data_buf[0] = aDoubleWord;
+    spi->dev->cmd.usr = 1;
+    while(spi->dev->cmd.usr);
     //SPI_MUTEX_UNLOCK();
-    spiTransfer(SPI_DEVICE_LCD, (uint8_t*)&aDoubleWord, 4, NULL, true, NULL);
+
+    //spiTransfer(SPI_DEVICE_LCD, (uint8_t*)&aDoubleWord, 4, NULL, true, NULL);
 }
